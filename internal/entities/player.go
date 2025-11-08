@@ -1,0 +1,148 @@
+package entities
+
+import (
+	"bytes"
+	"game/internal/animation"
+	"game/internal/config"
+	"image"
+
+	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/examples/resources/images"
+)
+
+type Player = Character
+
+const (
+	MoveSpeed  = 2
+	JumpHeight = 20
+)
+
+const (
+	AnimRowIdle = iota
+	AnimRowRun
+	AnimRowJump
+)
+
+const (
+	AnimFramesIdle = 4
+	AnimFramesRun  = 8
+)
+
+const (
+	AnimationFrameWidth  = 16
+	AnimationFrameHeight = 16
+)
+
+func NewPlayer() (*Character, error) {
+
+	img, _, err := image.Decode(bytes.NewReader(images.Runner_png))
+	if err != nil {
+		return nil, err
+	}
+
+	return NewCharacter(
+		CharacterState{
+			Sprite: ebiten.NewImageFromImage(img),
+			CurrentAnim: animation.Anim{
+				Row:         AnimRowIdle,
+				FrameCount:  AnimFramesIdle,
+				FrameWidth:  AnimationFrameWidth,
+				FrameHeight: AnimationFrameHeight,
+			},
+			position: &Position{
+				X: 0,
+				Y: 0,
+			},
+		},
+	), nil
+}
+
+func (p *Player) Update(key ebiten.Key) {
+	width, height := ebiten.WindowSize()
+	switch key {
+	case ebiten.KeySpace:
+		p.State.CurrentAnim.Row = AnimRowJump
+
+		if p.State.position.Y == p.State.actualYPos-JumpHeight {
+			p.State.descending = true
+		}
+
+		if p.State.position.Y >= p.State.actualYPos-JumpHeight {
+			if p.State.descending {
+				p.State.position.Y += MoveSpeed
+			} else {
+				p.State.position.Y -= MoveSpeed
+			}
+		}
+		if p.State.position.Y >= p.State.actualYPos {
+			p.State.descending = false
+			p.State.CurrentAnim.Row = AnimRowIdle
+			p.State.CurrentAnim.FrameCount = AnimFramesIdle
+		}
+
+	case ebiten.KeyUp:
+		p.State.CurrentAnim.Row = AnimRowRun
+		p.State.CurrentAnim.FrameCount = AnimFramesRun
+		if p.State.position.Y >= -height/5 {
+			p.State.position.Y -= MoveSpeed
+		}
+		p.State.actualYPos = p.State.position.Y
+
+	case ebiten.KeyDown:
+		p.State.CurrentAnim.Row = AnimRowRun
+		p.State.CurrentAnim.FrameCount = AnimFramesRun
+		if p.State.position.Y <= height/8 {
+			p.State.position.Y += MoveSpeed
+		}
+		p.State.actualYPos = p.State.position.Y
+
+	case ebiten.KeyRight:
+		p.State.flipped = false
+		p.State.CurrentAnim.Row = AnimRowRun
+		p.State.CurrentAnim.FrameCount = AnimFramesRun
+		if p.State.position.X <= width/5 {
+			p.State.position.X += MoveSpeed
+		}
+
+	case ebiten.KeyLeft:
+		p.State.flipped = true
+		p.State.CurrentAnim.Row = AnimRowRun
+		p.State.CurrentAnim.FrameCount = AnimFramesRun
+		if p.State.position.X >= -width/5 {
+			p.State.position.X -= MoveSpeed
+		}
+
+	default:
+		p.State.CurrentAnim.Row = AnimRowIdle
+		p.State.CurrentAnim.FrameCount = AnimFramesIdle
+		if p.State.position.Y < p.State.actualYPos {
+			p.State.position.Y += MoveSpeed
+		}
+	}
+}
+
+func (p *Player) Draw(cfg config.Config, screen *ebiten.Image, tick int) {
+	op := &ebiten.DrawImageOptions{}
+
+	if p.State.flipped {
+		op.GeoM.Scale(-1, 1)
+		op.GeoM.Translate(float64(p.State.CurrentAnim.FrameWidth), 0)
+	}
+
+	op.GeoM.Translate(
+		-float64(p.State.CurrentAnim.FrameWidth)/2,
+		-float64(p.State.CurrentAnim.FrameHeight)/2,
+	)
+
+	op.GeoM.Translate(
+		float64(cfg.ScreenWidth/2+p.State.position.X),
+		float64(cfg.ScreenHeight/2+p.State.position.Y),
+	)
+
+	i := (tick / cfg.TicksPerFrame) % p.State.CurrentAnim.FrameCount
+	sx := cfg.FrameOX + i*p.State.CurrentAnim.FrameWidth
+	sy := p.State.CurrentAnim.Row * p.State.CurrentAnim.FrameHeight
+	screen.DrawImage(p.State.Sprite.SubImage(
+		image.Rect(sx, sy, sx+p.State.CurrentAnim.FrameWidth, sy+p.State.CurrentAnim.FrameHeight),
+	).(*ebiten.Image), op)
+}
