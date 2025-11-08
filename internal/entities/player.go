@@ -2,15 +2,17 @@ package entities
 
 import (
 	"bytes"
-	"game/internal/animation"
-	"game/internal/config"
 	"image"
+	"shleimel_colide/internal/animation"
+	"shleimel_colide/internal/config"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/examples/resources/images"
 )
 
-type Player = Character
+type Player struct {
+	Character
+}
 
 const (
 	MoveSpeed  = 2
@@ -29,18 +31,18 @@ const (
 )
 
 const (
-	AnimationFrameWidth  = 16
-	AnimationFrameHeight = 16
+	AnimationFrameWidth  = 32
+	AnimationFrameHeight = 32
 )
 
-func NewPlayer() (*Character, error) {
+func NewPlayer() (*Player, error) {
 
 	img, _, err := image.Decode(bytes.NewReader(images.Runner_png))
 	if err != nil {
 		return nil, err
 	}
 
-	return NewCharacter(
+	c := NewCharacter(
 		CharacterState{
 			Sprite: ebiten.NewImageFromImage(img),
 			CurrentAnim: animation.Anim{
@@ -54,7 +56,8 @@ func NewPlayer() (*Character, error) {
 				Y: 0,
 			},
 		},
-	), nil
+	)
+	return &Player{Character: *c}, nil
 }
 
 func (p *Player) Update(key ebiten.Key) {

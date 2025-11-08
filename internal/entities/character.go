@@ -1,7 +1,7 @@
 package entities
 
 import (
-	"game/internal/animation"
+	"shleimel_colide/internal/animation"
 
 	"github.com/hajimehoshi/ebiten/v2"
 )

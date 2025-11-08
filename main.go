@@ -1,11 +1,11 @@
 package main
 
 import (
-	"game/internal/config"
-	"game/internal/game"
 	_ "image/png"
 	"log"
 	"os"
+	"shleimel_colide/internal/config"
+	"shleimel_colide/internal/game"
 
 	"github.com/hajimehoshi/ebiten/v2"
 )

@@ -1,4 +1,4 @@
-module game
+module shleimel_colide
 
 go 1.25.3
 
