@@ -4,6 +4,7 @@ import (
 	"log"
 	"shleimel_colide/internal/config"
 	"shleimel_colide/internal/entities"
+	"shleimel_colide/internal/utils"
 
 	"github.com/hajimehoshi/ebiten/v2"
 )
@@ -58,6 +59,8 @@ func (g *Game) Update() error {
 func (g *Game) Draw(screen *ebiten.Image) {
 	g.Player.Draw(g.Config, screen, g.Count)
 	g.Enemy.Draw(g.Config, screen, g.Count)
+
+	utils.LogOnSceen(screen, "Hello Shleimel", nil)
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
