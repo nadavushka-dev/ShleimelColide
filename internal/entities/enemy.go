@@ -3,6 +3,8 @@ package entities
 import (
 	"bytes"
 	"image"
+	"log"
+	"math/rand"
 	"shleimel_colide/internal/animation"
 	"shleimel_colide/internal/config"
 
@@ -14,12 +16,28 @@ type Enemy struct {
 	Character
 }
 
-func NewEnemy() (*Enemy, error) {
+func NewEnemy(conf config.Config) (*Enemy, error) {
 
 	img, _, err := image.Decode(bytes.NewReader(images.Runner_png))
 	if err != nil {
 		return nil, err
 	}
+
+	spawnOffset := 70*2 + AnimationFrameHeight
+	spawnX := conf.ScreenWidth - spawnOffset
+	spawnY := conf.ScreenHeight - spawnOffset + 50
+
+	posX := rand.Intn(spawnX) - spawnX/2
+	posY := rand.Intn(spawnY) - spawnY/2
+
+	screenX := conf.ScreenWidth/2 + posX
+	screenY := conf.ScreenHeight/2 + posY
+
+	log.Printf("Enemy spawn: Config(%dx%d)       Offset=%d Range(%dx%d) Pos(%d,%d) Screen(%d   ,%d) SpriteY[%d-%d]",
+		conf.ScreenWidth, conf.ScreenHeight,
+		spawnOffset, spawnX, spawnY,
+		posX, posY, screenX, screenY, screenY-16,
+		screenY+16)
 
 	c := NewCharacter(
 		CharacterState{
@@ -30,9 +48,9 @@ func NewEnemy() (*Enemy, error) {
 				FrameWidth:  AnimationFrameWidth,
 				FrameHeight: AnimationFrameHeight,
 			},
-			position: &Position{
-				X: 100,
-				Y: 100,
+			Position: &Position{
+				X: posX,
+				Y: posY,
 			},
 		},
 	)
@@ -45,18 +63,18 @@ func (e *Enemy) Update(key ebiten.Key) {
 	case ebiten.KeySpace:
 		e.State.CurrentAnim.Row = AnimRowJump
 
-		if e.State.position.Y == e.State.actualYPos-JumpHeight {
+		if e.State.Position.Y == e.State.idleYpos-JumpHeight {
 			e.State.descending = true
 		}
 
-		if e.State.position.Y >= e.State.actualYPos-JumpHeight {
+		if e.State.Position.Y >= e.State.idleYpos-JumpHeight {
 			if e.State.descending {
-				e.State.position.Y += MoveSpeed
+				e.State.Position.Y += MoveSpeed
 			} else {
-				e.State.position.Y -= MoveSpeed
+				e.State.Position.Y -= MoveSpeed
 			}
 		}
-		if e.State.position.Y >= e.State.actualYPos {
+		if e.State.Position.Y >= e.State.idleYpos {
 			e.State.descending = false
 			e.State.CurrentAnim.Row = AnimRowIdle
 			e.State.CurrentAnim.FrameCount = AnimFramesIdle
@@ -65,40 +83,40 @@ func (e *Enemy) Update(key ebiten.Key) {
 	case ebiten.KeyUp:
 		e.State.CurrentAnim.Row = AnimRowRun
 		e.State.CurrentAnim.FrameCount = AnimFramesRun
-		if e.State.position.Y >= -height/5 {
-			e.State.position.Y -= MoveSpeed
+		if e.State.Position.Y >= -height/5 {
+			e.State.Position.Y -= MoveSpeed
 		}
-		e.State.actualYPos = e.State.position.Y
+		e.State.idleYpos = e.State.Position.Y
 
 	case ebiten.KeyDown:
 		e.State.CurrentAnim.Row = AnimRowRun
 		e.State.CurrentAnim.FrameCount = AnimFramesRun
-		if e.State.position.Y <= height/8 {
-			e.State.position.Y += MoveSpeed
+		if e.State.Position.Y <= height/8 {
+			e.State.Position.Y += MoveSpeed
 		}
-		e.State.actualYPos = e.State.position.Y
+		e.State.idleYpos = e.State.Position.Y
 
 	case ebiten.KeyRight:
 		e.State.flipped = false
 		e.State.CurrentAnim.Row = AnimRowRun
 		e.State.CurrentAnim.FrameCount = AnimFramesRun
-		if e.State.position.X <= width/5 {
-			e.State.position.X += MoveSpeed
+		if e.State.Position.X <= width/5 {
+			e.State.Position.X += MoveSpeed
 		}
 
 	case ebiten.KeyLeft:
 		e.State.flipped = true
 		e.State.CurrentAnim.Row = AnimRowRun
 		e.State.CurrentAnim.FrameCount = AnimFramesRun
-		if e.State.position.X >= -width/5 {
-			e.State.position.X -= MoveSpeed
+		if e.State.Position.X >= -width/5 {
+			e.State.Position.X -= MoveSpeed
 		}
 
 	default:
 		e.State.CurrentAnim.Row = AnimRowIdle
 		e.State.CurrentAnim.FrameCount = AnimFramesIdle
-		if e.State.position.Y < e.State.actualYPos {
-			e.State.position.Y += MoveSpeed
+		if e.State.Position.Y < e.State.idleYpos {
+			e.State.Position.Y += MoveSpeed
 		}
 	}
 }
@@ -117,8 +135,8 @@ func (e *Enemy) Draw(cfg config.Config, screen *ebiten.Image, tick int) {
 	)
 
 	op.GeoM.Translate(
-		float64(cfg.ScreenWidth/2+e.State.position.X),
-		float64(cfg.ScreenHeight/2+e.State.position.Y),
+		float64(cfg.ScreenWidth/2+e.State.Position.X),
+		float64(cfg.ScreenHeight/2+e.State.Position.Y),
 	)
 
 	i := (tick / cfg.TicksPerFrame) % e.State.CurrentAnim.FrameCount

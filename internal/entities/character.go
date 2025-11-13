@@ -14,8 +14,8 @@ type Position struct {
 type CharacterState struct {
 	Sprite      *ebiten.Image
 	CurrentAnim animation.Anim
-	position    *Position
-	actualYPos  int
+	Position    *Position
+	idleYpos    int
 	flipped     bool
 	descending  bool
 }
@@ -30,4 +30,14 @@ func NewCharacter(State CharacterState) *Character {
 	}
 
 	return c
+}
+
+func (c *Character) GetBounderies() (xr, xl, yb, yt int) {
+	w := int(float64(c.State.CurrentAnim.FrameWidth) * 0.6)
+	h := int(float64(c.State.CurrentAnim.FrameHeight) * 0.85)
+	xr = c.State.Position.X + (w / 2)
+	xl = c.State.Position.X - (w / 2)
+	yb = c.State.Position.Y + (h / 2)
+	yt = c.State.Position.Y - (h / 2)
+	return
 }

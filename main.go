@@ -22,8 +22,10 @@ func main() {
 		config.GetDefaultConfig(),
 	)
 
-	// Specify the window size as you like. Here, a doubled size is specified.
-	ebiten.SetWindowSize(g.Config.ScreenWidth*2, g.Config.ScreenHeight*2)
+	monitorWidth, monitorHeight := ebiten.Monitor().Size()
+	windowWidth := int(float64(monitorWidth) * 0.95)
+	windowHeight := int(float64(monitorHeight) * 0.95)
+	ebiten.SetWindowSize(windowWidth, windowHeight)
 	ebiten.SetWindowTitle("My first game")
 
 	// Call ebiten.RunGame to start your game loop.
