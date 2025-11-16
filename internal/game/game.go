@@ -10,16 +10,19 @@ import (
 )
 
 type Game struct {
-	Count  int
-	Config config.Config
-	Player *entities.Player
-	Enemy  []*entities.Enemy
+	Count       int
+	Config      config.Config
+	Player      *entities.Player
+	Enemy       []*entities.Enemy
+	PressedKeys []ebiten.Key
 }
 
 func CreateGame(cfg config.Config) *Game {
 	g := &Game{
-		Config: cfg,
+		Config:      cfg,
+		PressedKeys: make([]ebiten.Key, 0, 5),
 	}
+
 	var err error
 	g.Player, err = entities.NewPlayer()
 	if err != nil {
@@ -40,23 +43,33 @@ func CreateGame(cfg config.Config) *Game {
 
 func (g *Game) Update() error {
 	g.Count++
+	g.PressedKeys = g.PressedKeys[:0]
+
 	keys := []ebiten.Key{
 		ebiten.KeyUp,
 		ebiten.KeyRight,
 		ebiten.KeyLeft,
 		ebiten.KeyDown,
 		ebiten.KeySpace,
+		ebiten.KeyH,
+		ebiten.KeyJ,
+		ebiten.KeyK,
+		ebiten.KeyL,
 	}
-	pressedKey := ebiten.Key(0)
+
+	isJumpKeyPressed := false
 
 	for _, key := range keys {
 		if ebiten.IsKeyPressed(key) {
-			pressedKey = key
-			break
+			if key == ebiten.KeySpace {
+				isJumpKeyPressed = true
+			}
+
+			g.PressedKeys = append(g.PressedKeys, key)
 		}
 	}
 
-	g.Player.Update(pressedKey)
+	g.Player.Update(g.PressedKeys, isJumpKeyPressed, g.Config)
 	return nil
 }
 

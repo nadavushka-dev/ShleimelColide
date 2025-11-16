@@ -1,13 +1,10 @@
 package entities
 
 import (
-	"bytes"
-	"image"
 	"shleimel_colide/internal/animation"
 	"shleimel_colide/internal/config"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/examples/resources/images"
 )
 
 type Player struct {
@@ -29,6 +26,7 @@ const (
 const (
 	AnimFramesIdle = 4
 	AnimFramesRun  = 8
+	AnimFramesJump = 4
 )
 
 const (
@@ -38,7 +36,7 @@ const (
 
 func NewPlayer() (*Player, error) {
 
-	img, _, err := image.Decode(bytes.NewReader(images.Runner_png))
+	img, err := loadSprite()
 	if err != nil {
 		return nil, err
 	}
@@ -61,93 +59,100 @@ func NewPlayer() (*Player, error) {
 	return &Player{Character: *c}, nil
 }
 
-func (p *Player) Update(key ebiten.Key) {
-	width, height := ebiten.WindowSize()
+func (p *Player) Update(keys []ebiten.Key, isJumpKeyPressed bool, cf config.Config) {
+	isJumping := false
+	isMoving := false
 
-	switch key {
-	case ebiten.KeySpace:
-		p.State.CurrentAnim.Row = AnimRowJump
-
-		if p.State.Position.Y == p.State.idleYpos-JumpHeight {
-			p.State.descending = true
-		}
-
-		if p.State.Position.Y >= p.State.idleYpos-JumpHeight {
-			if p.State.descending {
-				p.State.Position.Y += MoveSpeed
-			} else {
-				p.State.Position.Y -= MoveSpeed
-			}
-		}
-		if p.State.Position.Y >= p.State.idleYpos {
-			p.State.descending = false
-			p.State.CurrentAnim.Row = AnimRowIdle
-			p.State.CurrentAnim.FrameCount = AnimFramesIdle
-		}
-
-	case ebiten.KeyUp:
-		p.State.CurrentAnim.Row = AnimRowRun
-		p.State.CurrentAnim.FrameCount = AnimFramesRun
-		if p.State.Position.Y >= -height/4 {
-			p.State.Position.Y -= MoveSpeed
-		}
-		p.State.idleYpos = p.State.Position.Y
-
-	case ebiten.KeyDown:
-		p.State.CurrentAnim.Row = AnimRowRun
-		p.State.CurrentAnim.FrameCount = AnimFramesRun
-		if p.State.Position.Y <= height/4 {
-			p.State.Position.Y += MoveSpeed
-		}
-		p.State.idleYpos = p.State.Position.Y
-
-	case ebiten.KeyRight:
-		p.State.flipped = false
-		p.State.CurrentAnim.Row = AnimRowRun
-		p.State.CurrentAnim.FrameCount = AnimFramesRun
-		if p.State.Position.X <= width/4 {
-			p.State.Position.X += MoveSpeed
-		}
-
-	case ebiten.KeyLeft:
-		p.State.flipped = true
-		p.State.CurrentAnim.Row = AnimRowRun
-		p.State.CurrentAnim.FrameCount = AnimFramesRun
-		if p.State.Position.X >= -width/4 {
-			p.State.Position.X -= MoveSpeed
-		}
-
-	default:
-		p.State.CurrentAnim.Row = AnimRowIdle
-		p.State.CurrentAnim.FrameCount = AnimFramesIdle
+	if len(keys) == 0 {
+		isJumping = false
+		isMoving = false
 		if p.State.Position.Y < p.State.idleYpos {
 			p.State.Position.Y += MoveSpeed
 		}
+		p.State.CurrentAnim.Row = AnimRowIdle
+		p.State.CurrentAnim.FrameCount = AnimFramesIdle
+		return
+	}
+
+	for _, key := range keys {
+		switch key {
+		case ebiten.KeySpace:
+			p.handleGravity(&isJumping)
+
+		case ebiten.KeyUp, ebiten.KeyK:
+			if isJumpKeyPressed {
+				break
+			}
+			isMoving = true
+			if p.State.Position.Y >= -cf.ScreenHeight/2 {
+				p.State.Position.Y -= MoveSpeed
+			}
+			p.State.idleYpos = p.State.Position.Y
+
+		case ebiten.KeyDown, ebiten.KeyJ:
+			if isJumpKeyPressed {
+				break
+			}
+			isMoving = true
+			if p.State.Position.Y <= cf.ScreenHeight/2 {
+				p.State.Position.Y += MoveSpeed
+			}
+			p.State.idleYpos = p.State.Position.Y
+
+		case ebiten.KeyRight, ebiten.KeyL:
+			p.State.flipped = false
+			isMoving = true
+			if p.State.Position.X <= cf.ScreenWidth/2 {
+				p.State.Position.X += MoveSpeed
+			}
+			if (p.State.descending || !isJumpKeyPressed) && p.State.Position.Y < p.State.idleYpos {
+				p.State.Position.Y += MoveSpeed
+			}
+
+		case ebiten.KeyLeft, ebiten.KeyR:
+			p.State.flipped = true
+			isMoving = true
+			if p.State.Position.X >= -cf.ScreenWidth/2 {
+				p.State.Position.X -= MoveSpeed
+			}
+			if (p.State.descending || !isJumpKeyPressed) && p.State.Position.Y < p.State.idleYpos {
+				p.State.Position.Y += MoveSpeed
+			}
+
+		}
+
+	}
+	p.handleAnimationFrameCount(isJumping, isMoving)
+}
+
+func (p *Player) handleGravity(isJumping *bool) {
+	*isJumping = true
+
+	if p.State.Position.Y == p.State.idleYpos-JumpHeight {
+		p.State.descending = true
+	}
+
+	if p.State.Position.Y >= p.State.idleYpos-JumpHeight {
+		if p.State.descending {
+			p.State.Position.Y += MoveSpeed
+		} else {
+			p.State.Position.Y -= MoveSpeed
+		}
+	}
+	if p.State.Position.Y >= p.State.idleYpos {
+		p.State.descending = false
 	}
 }
 
-func (p *Player) Draw(cfg config.Config, screen *ebiten.Image, tick int) {
-	op := &ebiten.DrawImageOptions{}
-
-	if p.State.flipped {
-		op.GeoM.Scale(-1, 1)
-		op.GeoM.Translate(float64(p.State.CurrentAnim.FrameWidth), 0)
+func (p *Player) handleAnimationFrameCount(isJumping, isMoving bool) {
+	if isJumping {
+		p.State.CurrentAnim.Row = AnimRowJump
+		p.State.CurrentAnim.FrameCount = AnimFramesJump
+	} else if isMoving {
+		p.State.CurrentAnim.Row = AnimRowRun
+		p.State.CurrentAnim.FrameCount = AnimFramesRun
+	} else {
+		p.State.CurrentAnim.Row = AnimRowIdle
+		p.State.CurrentAnim.FrameCount = AnimFramesIdle
 	}
-
-	op.GeoM.Translate(
-		-float64(p.State.CurrentAnim.FrameWidth)/2,
-		-float64(p.State.CurrentAnim.FrameHeight)/2,
-	)
-
-	op.GeoM.Translate(
-		float64(cfg.ScreenWidth/2+p.State.Position.X),
-		float64(cfg.ScreenHeight/2+p.State.Position.Y),
-	)
-
-	i := (tick / cfg.TicksPerFrame) % p.State.CurrentAnim.FrameCount
-	sx := cfg.FrameOX + i*p.State.CurrentAnim.FrameWidth
-	sy := p.State.CurrentAnim.Row * p.State.CurrentAnim.FrameHeight
-	screen.DrawImage(p.State.Sprite.SubImage(
-		image.Rect(sx, sy, sx+p.State.CurrentAnim.FrameWidth, sy+p.State.CurrentAnim.FrameHeight),
-	).(*ebiten.Image), op)
 }

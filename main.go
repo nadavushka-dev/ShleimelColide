@@ -25,6 +25,7 @@ func main() {
 	monitorWidth, monitorHeight := ebiten.Monitor().Size()
 	windowWidth := int(float64(monitorWidth) * 0.95)
 	windowHeight := int(float64(monitorHeight) * 0.95)
+
 	ebiten.SetWindowSize(windowWidth, windowHeight)
 	ebiten.SetWindowTitle("My first game")
 
