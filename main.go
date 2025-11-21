@@ -15,12 +15,19 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer func() {
+		if closeErr := logfile.Close(); closeErr != nil {
+			log.Printf("Failed to close log fole :%v", closeErr)
+		}
+	}()
 	log.SetOutput(logfile)
-	defer logfile.Close()
 
-	g := game.CreateGame(
+	g, err := game.CreateGame(
 		config.GetDefaultConfig(),
 	)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	monitorWidth, monitorHeight := ebiten.Monitor().Size()
 	windowWidth := int(float64(monitorWidth) * 0.95)
