@@ -30,11 +30,11 @@ func initFont() error {
 	return err
 }
 
-func LogOnSceen(screen *ebiten.Image, s string, c *color) error {
+func LogOnSceen(screen *ebiten.Image, s string, c *color, posX *float64, posY *float64, centerX bool, centerY bool) error {
 	initOnce.Do(
 		func() {
 			if err := initFont(); err != nil {
-				log.Printf("Faild to create text face source: %v", err)
+				log.Printf("Failed to create text face source: %v", err)
 			}
 		},
 	)
@@ -43,16 +43,45 @@ func LogOnSceen(screen *ebiten.Image, s string, c *color) error {
 		return errors.New("font not initialized")
 	}
 
-	// Use default color if none provided
 	defaultColor := color{r: 0, g: 255, b: 0, a: 255}
 	if c == nil {
 		c = &defaultColor
 	}
 
+	// Dynamic scaling based on screen size
+	screenWidth := screen.Bounds().Dx()
+	scale := float64(screenWidth) / 1920.0
+	fontSize := 36.0 * scale
+
+	face := &text.GoTextFace{
+		Source: textFaceSource,
+		Size:   fontSize,
+	}
+
+	boundsWidth, boundsHeight := text.Measure(s, face, 0)
+	x := 10.00
+	y := 10.00
+
+	if centerX {
+		x = float64(screenWidth)/2 - boundsWidth/2
+	}
+	if centerY {
+		screenHeight := screen.Bounds().Dy()
+		y = float64(screenHeight)/2 - boundsHeight/2
+	}
+
+	if posX != nil {
+		x = *posX
+	}
+
+	if posY != nil {
+		y = *posY
+	}
+
 	op := &text.DrawOptions{}
 	op.ColorScale.Scale(c.r, c.g, c.b, c.a)
-	op.GeoM.Translate(10, 10)
-	face := &text.GoTextFace{Source: textFaceSource, Size: 12}
+	op.Filter = ebiten.FilterLinear // Smooth scaling
+	op.GeoM.Translate(x, y)
 
 	text.Draw(screen, s, face, op)
 	return nil
