@@ -12,28 +12,6 @@ type Player struct {
 	IsCollide bool
 }
 
-const (
-	MoveSpeed  = 3
-	JumpHeight = 30
-)
-
-const (
-	AnimRowIdle = iota
-	AnimRowRun
-	AnimRowJump
-)
-
-const (
-	AnimFramesIdle = 4
-	AnimFramesRun  = 8
-	AnimFramesJump = 4
-)
-
-const (
-	AnimationFrameWidth  = 32
-	AnimationFrameHeight = 32
-)
-
 func NewPlayer() (*Player, error) {
 
 	img, err := loadSprite()
@@ -59,11 +37,17 @@ func NewPlayer() (*Player, error) {
 	return &Player{Character: *c}, nil
 }
 
-func (p *Player) Update(keys []ebiten.Key, isJumpKeyPressed bool, cf config.Config) {
+type UpdateInput struct {
+	Keys             []ebiten.Key
+	IsJumpKeyPressed bool
+	Cf               config.Config
+}
+
+func (p *Player) Update(input UpdateInput) {
 	isJumping := false
 	isMoving := false
 
-	if len(keys) == 0 {
+	if len(input.Keys) == 0 {
 		isJumping = false
 		isMoving = false
 		if p.State.Position.Y < p.State.idleYpos {
@@ -74,48 +58,49 @@ func (p *Player) Update(keys []ebiten.Key, isJumpKeyPressed bool, cf config.Conf
 		return
 	}
 
-	for _, key := range keys {
+	for _, key := range input.Keys {
 		switch key {
 		case ebiten.KeySpace:
 			p.handleGravity(&isJumping)
 
-		case ebiten.KeyUp, ebiten.KeyK:
-			if isJumpKeyPressed {
+		case ebiten.KeyUp:
+			if input.IsJumpKeyPressed {
 				break
 			}
 			isMoving = true
-			if p.State.Position.Y >= -cf.ScreenHeight/2 {
+			if p.State.Position.Y >= -input.Cf.ScreenHeight/2 {
 				p.State.Position.Y -= MoveSpeed
 			}
 			p.State.idleYpos = p.State.Position.Y
 
-		case ebiten.KeyDown, ebiten.KeyJ:
-			if isJumpKeyPressed {
+		case ebiten.KeyDown:
+			if input.IsJumpKeyPressed {
 				break
 			}
 			isMoving = true
-			if p.State.Position.Y <= cf.ScreenHeight/2 {
+			if p.State.Position.Y <= input.Cf.ScreenHeight/2 {
 				p.State.Position.Y += MoveSpeed
 			}
 			p.State.idleYpos = p.State.Position.Y
 
-		case ebiten.KeyRight, ebiten.KeyL:
+		case ebiten.KeyRight:
 			p.State.flipped = false
 			isMoving = true
-			if p.State.Position.X <= cf.ScreenWidth/2 {
+			if p.State.Position.X <= input.Cf.ScreenWidth/2 {
 				p.State.Position.X += MoveSpeed
 			}
-			if (p.State.descending || !isJumpKeyPressed) && p.State.Position.Y < p.State.idleYpos {
+			if (p.State.descending || !input.IsJumpKeyPressed) && p.State.Position.Y < p.State.idleYpos {
 				p.State.Position.Y += MoveSpeed
 			}
 
-		case ebiten.KeyLeft, ebiten.KeyR:
+		case ebiten.KeyLeft:
 			p.State.flipped = true
+
 			isMoving = true
-			if p.State.Position.X >= -cf.ScreenWidth/2 {
+			if p.State.Position.X >= -input.Cf.ScreenWidth/2 {
 				p.State.Position.X -= MoveSpeed
 			}
-			if (p.State.descending || !isJumpKeyPressed) && p.State.Position.Y < p.State.idleYpos {
+			if (p.State.descending || !input.IsJumpKeyPressed) && p.State.Position.Y < p.State.idleYpos {
 				p.State.Position.Y += MoveSpeed
 			}
 

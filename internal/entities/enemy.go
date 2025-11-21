@@ -57,5 +57,22 @@ func NewEnemy(conf config.Config) (*Enemy, error) {
 	return &Enemy{Character: *c}, nil
 }
 
-func (e *Enemy) Update(key ebiten.Key) {
+func (e *Enemy) Update(pPos Position) {
+	ePos := e.State.Position
+	if ePos.X != pPos.X {
+		if ePos.X < pPos.X {
+			ePos.X += 1
+		} else {
+			ePos.X -= 1
+		}
+	}
+
+	if ePos.Y != pPos.Y {
+		if ePos.Y < pPos.Y {
+			ePos.Y += 1
+		} else {
+			ePos.Y -= 1
+		}
+	}
+
 }

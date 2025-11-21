@@ -36,7 +36,7 @@ func NewCharacter(State CharacterState) *Character {
 	return c
 }
 
-func (c *Character) GetBounderies() (xr, xl, yb, yt int) {
+func (c *Character) GetBoundaries() (xr, xl, yb, yt int) {
 	w := int(float64(c.State.CurrentAnim.FrameWidth) * 0.6)
 	h := int(float64(c.State.CurrentAnim.FrameHeight) * 0.85)
 	xr = c.State.Position.X + (w / 2)
@@ -55,8 +55,7 @@ func (c *Character) Draw(cfg config.Config, screen *ebiten.Image, tick int) {
 	}
 
 	op.GeoM.Translate(
-		-float64(c.State.CurrentAnim.FrameWidth)/2,
-		-float64(c.State.CurrentAnim.FrameHeight)/2,
+		-float64(c.State.CurrentAnim.FrameWidth)/2, -float64(c.State.CurrentAnim.FrameHeight)/2,
 	)
 
 	op.GeoM.Translate(
