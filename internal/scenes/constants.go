@@ -16,6 +16,9 @@ type GameContext interface {
 	GetCount() int
 	GetEnemies() []*entities.Enemy
 	AddEnemy(enemy *entities.Enemy)
+	SetScene(scene GameScene)
+	IncrementScore()
+	GetScore() int
 }
 
 type GameSceneConfig interface {

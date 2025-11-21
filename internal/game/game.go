@@ -17,6 +17,7 @@ type Game struct {
 	PressedKeys []ebiten.Key
 	keysWatched []ebiten.Key
 	Scene       scenes.GameScene
+	Score       int
 }
 
 func CreateGame(cfg config.Config) (*Game, error) {
@@ -34,6 +35,7 @@ func CreateGame(cfg config.Config) (*Game, error) {
 			ebiten.KeyK,
 			ebiten.KeyL,
 		},
+		Score: 0,
 	}
 
 	var err error
@@ -65,6 +67,12 @@ func (g *Game) Update() error {
 		if err != nil {
 			return fmt.Errorf("Failed to update playground scene: %w", err)
 		}
+	case scenes.GameOver:
+		sc = &scenes.GameOverScene{}
+		err := sc.Update(g)
+		if err != nil {
+			return fmt.Errorf("Failed to update game over scene: %w", err)
+		}
 	}
 
 	return nil
@@ -75,6 +83,9 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	switch g.Scene {
 	case scenes.Playgroung:
 		sc = &scenes.PlaygroundScene{}
+		sc.Draw(g, screen)
+	case scenes.GameOver:
+		sc = &scenes.GameOverScene{}
 		sc.Draw(g, screen)
 	}
 
@@ -114,4 +125,16 @@ func (g *Game) GetEnemies() []*entities.Enemy {
 
 func (g *Game) AddEnemy(enemy *entities.Enemy) {
 	g.Enemy = append(g.Enemy, enemy)
+}
+
+func (g *Game) SetScene(scene scenes.GameScene) {
+	g.Scene = scene
+}
+
+func (g *Game) IncrementScore() {
+	g.Score++
+}
+
+func (g *Game) GetScore() int {
+	return g.Score
 }

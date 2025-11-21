@@ -38,6 +38,7 @@ func (sc *PlaygroundScene) Update(g GameContext) error {
 			return fmt.Errorf("Failed to create enemy: %w", err)
 		}
 		g.AddEnemy(e)
+		g.IncrementScore()
 	}
 
 	for _, e := range enemies {
@@ -56,14 +57,14 @@ func (sc *PlaygroundScene) Draw(g GameContext, screen *ebiten.Image) {
 	for _, e := range enemies {
 		e.Draw(*config, screen, count)
 	}
-	t := "No Collision"
+	t := fmt.Sprintf("score: %d", g.GetScore())
 
 	for _, e := range enemies {
 		if utils.CollisionDetection(player, e) {
-			t = "Collision!!!"
+			g.SetScene(GameOver)
 		}
 	}
 	player.Draw(*config, screen, count)
 
-	utils.LogOnSceen(screen, t, nil)
+	utils.LogOnSceen(screen, t, nil, nil, nil, false, false)
 }
