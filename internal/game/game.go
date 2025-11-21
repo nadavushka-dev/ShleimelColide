@@ -1,10 +1,10 @@
 package game
 
 import (
-	"log"
+	"fmt"
 	"shleimel_colide/internal/config"
 	"shleimel_colide/internal/entities"
-	"shleimel_colide/internal/utils"
+	"shleimel_colide/internal/scenes"
 
 	"github.com/hajimehoshi/ebiten/v2"
 )
@@ -15,91 +15,103 @@ type Game struct {
 	Player      *entities.Player
 	Enemy       []*entities.Enemy
 	PressedKeys []ebiten.Key
+	keysWatched []ebiten.Key
+	Scene       scenes.GameScene
 }
 
-func CreateGame(cfg config.Config) *Game {
+func CreateGame(cfg config.Config) (*Game, error) {
 	g := &Game{
 		Config:      cfg,
 		PressedKeys: make([]ebiten.Key, 0, 5),
+		keysWatched: []ebiten.Key{
+			ebiten.KeyUp,
+			ebiten.KeyRight,
+			ebiten.KeyLeft,
+			ebiten.KeyDown,
+			ebiten.KeySpace,
+			ebiten.KeyH,
+			ebiten.KeyJ,
+			ebiten.KeyK,
+			ebiten.KeyL,
+		},
 	}
 
 	var err error
 	g.Player, err = entities.NewPlayer()
 	if err != nil {
-		log.Fatal("Failed to create player:", err)
+		return nil, fmt.Errorf("Failed to create player: %w", err)
 	}
 
-	for range 5 {
-		e, err := entities.NewEnemy(g.Config)
-		if err != nil {
-			log.Fatal("Failed to create enemy:", err)
-		}
+	// for range 5 {
+	// 	e, err := entities.NewEnemy(g.Config)
+	// 	if err != nil {
+	// 		return nil, fmt.Errorf("Failed to create enemy: %w", err)
+	// 	}
+	//
+	// 	g.Enemy = append(g.Enemy, e)
+	// }
 
-		g.Enemy = append(g.Enemy, e)
-	}
-
-	return g
+	return g, nil
 }
 
 func (g *Game) Update() error {
 	g.Count++
 	g.PressedKeys = g.PressedKeys[:0]
-
-	keys := []ebiten.Key{
-		ebiten.KeyUp,
-		ebiten.KeyRight,
-		ebiten.KeyLeft,
-		ebiten.KeyDown,
-		ebiten.KeySpace,
-		ebiten.KeyH,
-		ebiten.KeyJ,
-		ebiten.KeyK,
-		ebiten.KeyL,
-	}
-
-	isJumpKeyPressed := false
-
-	for _, key := range keys {
-		if ebiten.IsKeyPressed(key) {
-			if key == ebiten.KeySpace {
-				isJumpKeyPressed = true
-			}
-
-			g.PressedKeys = append(g.PressedKeys, key)
+	var sc scenes.GameSceneConfig
+	switch g.Scene {
+	case scenes.Playgroung:
+		sc = &scenes.PlaygroundScene{}
+		err := sc.Update(g)
+		if err != nil {
+			return fmt.Errorf("Failed to update playground scene: %w", err)
 		}
 	}
 
-	g.Player.Update(g.PressedKeys, isJumpKeyPressed, g.Config)
 	return nil
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-	g.Player.Draw(g.Config, screen, g.Count)
-	for _, e := range g.Enemy {
-		e.Draw(g.Config, screen, g.Count)
-	}
-	t := "No Collision"
-
-	for _, e := range g.Enemy {
-		if collisionDetection(g.Player, e) {
-			t = "Collision!!!"
-		}
+	var sc scenes.GameSceneConfig
+	switch g.Scene {
+	case scenes.Playgroung:
+		sc = &scenes.PlaygroundScene{}
+		sc.Draw(g, screen)
 	}
 
-	utils.LogOnSceen(screen, t, nil)
-}
-
-func collisionDetection(ent1 *entities.Player, ent2 *entities.Enemy) bool {
-	ent1xr, ent1xl, ent1yb, ent1yt := ent1.GetBounderies()
-	ent2xr, ent2xl, ent2yb, ent2yt := ent2.GetBounderies()
-
-	if ent1xr > ent2xl && ent1xl < ent2xr && ent1yt < ent2yb && ent1yb > ent2yt {
-		return true
-	}
-
-	return false
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
 	return g.Config.ScreenWidth, g.Config.ScreenHeight
+}
+
+func (g *Game) GetKeysWatched() []ebiten.Key {
+	return g.keysWatched
+}
+
+func (g *Game) GetPressedKeys() []ebiten.Key {
+	return g.PressedKeys
+}
+
+func (g *Game) AddPressedKey(key ebiten.Key) {
+	g.PressedKeys = append(g.PressedKeys, key)
+}
+
+func (g *Game) GetPlayer() *entities.Player {
+	return g.Player
+}
+
+func (g *Game) GetConfig() *config.Config {
+	return &g.Config
+}
+
+func (g *Game) GetCount() int {
+	return g.Count
+}
+
+func (g *Game) GetEnemies() []*entities.Enemy {
+	return g.Enemy
+}
+
+func (g *Game) AddEnemy(enemy *entities.Enemy) {
+	g.Enemy = append(g.Enemy, enemy)
 }
