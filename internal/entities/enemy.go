@@ -60,10 +60,14 @@ func NewEnemy(conf config.Config) (*Enemy, error) {
 func (e *Enemy) Update(pPos Position) {
 	ePos := e.State.Position
 	if ePos.X != pPos.X {
+		e.State.CurrentAnim.Row = AnimRowRun
+		e.State.CurrentAnim.FrameCount = AnimFramesRun
 		if ePos.X < pPos.X {
 			ePos.X += 1
+			e.State.flipped = false
 		} else {
 			ePos.X -= 1
+			e.State.flipped = true
 		}
 	}
 
