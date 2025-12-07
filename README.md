@@ -1,4 +1,4 @@
-# Shliemel Colide
+# Shleimel Colide
 
 A (very) simple 2D game built with Go and Ebiten.
 
@@ -10,11 +10,11 @@ A (very) simple 2D game built with Go and Ebiten.
 
 ## About
 
-All Shliemel wanted was to buy milk for his ol' bird at home. Simple task, right? WRONG. 
+All Shleimel wanted was to buy milk for his ol' bird at home. Simple task, right? WRONG. 
 
 Somehow, somewhere between the couch and the grocery store, things went absolutely sideways. Now he's stuck in the most bizarre
 situation imaginable - monsters are spawning left and right, and they just keep coming! No one knows why. No one knows how. But
-it is not Shliemel's fault!! Now he needs to dodge, weave, and survive this absolute nonsense while clutching his shopping list.
+it is not Shleimel's fault!! Now he needs to dodge, weave, and survive this absolute nonsense while clutching his shopping list.
 
 Will he get the milk? Will he make it home? Will his woman ever forgive him for being late? Find out in this bizarre game where a
 simple errand turns into the adventure **nobody asked for!**
